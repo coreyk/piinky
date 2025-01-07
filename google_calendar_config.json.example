@@ -1,0 +1,18 @@
+{
+  "calendars": [
+    {
+      "calendar_id": "c_1234567890@group.calendar.google.com",
+      "color": "blue"
+    },
+    {
+      "calendar_id": "c_0987654321@group.calendar.google.com",
+      "color": "fuchsia"
+    },
+    {
+      "calendar_id": "c_0000000000@group.calendar.google.com",
+      "color": "recycling"
+    }
+  ],
+  "start_on_sunday": true,
+  "number_of_weeks": 3
+}

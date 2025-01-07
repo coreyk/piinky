@@ -1,0 +1,9 @@
+{
+    "weather": {
+        "api_key": "1234567890",
+        "location": "New York, NY, USA",
+        "lat": 40.785091,
+        "lon": -73.968285,
+        "units": "imperial"
+    }
+}

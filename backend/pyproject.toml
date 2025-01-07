@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "piinky-backend"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.9"
+dependencies = [
+    "fastapi==0.115.6",
+    "uvicorn==0.34.0",
+    "google-auth==2.23.4",
+    "google-auth-oauthlib==1.1.0",
+    "google-auth-httplib2==0.1.1",
+    "google-api-python-client==2.108.0",
+    "python-dotenv==1.0.0",
+    "httpx==0.28.1",
+]
+
+# Optional dependencies for Raspberry Pi
+[project.optional-dependencies]
+pi = [
+    "inky",
+    "pigpio",
+]
+test = [
+    "pytest==7.4.4",
+    "pytest-asyncio==0.23.3",
+    "pytest-cov==4.1.0",
+    "httpx==0.28.1",
+    "fastapi==0.115.6",
+    "python-dotenv==1.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/coreyk/piinky"
+
+[tool.hatch.build.targets.wheel]
+packages = ["piinky_backend"]
+
+[tool.hatch.build]
+include = [
+    "piinky_backend/**/*.py",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true

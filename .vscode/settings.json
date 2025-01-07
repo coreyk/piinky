@@ -1,0 +1,16 @@
+{
+    "folders": [
+        {
+            "path": "backend",
+            "settings": {
+                "python.pythonPath": "./backend/venv/bin/python3.13"
+            }
+        },
+        {
+            "path": "display",
+            "settings": {
+                "python.pythonPath": "./display/venv/bin/python3.13"
+            }
+        }
+    ]
+}

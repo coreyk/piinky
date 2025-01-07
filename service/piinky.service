@@ -1,0 +1,13 @@
+[Unit]
+Description=Piinky Service
+After=network.target
+
+[Service]
+Environment="PATH=/home/coreyk/go/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
+User=coreyk
+WorkingDirectory=/home/coreyk/dev/piinky
+ExecStart=/home/coreyk/dev/piinky/piinky.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

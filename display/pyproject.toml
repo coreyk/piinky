@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "piinky-display"
+version = "0.1.0"
+description = "Display service for Piinky"
+requires-python = ">=3.9"
+dependencies = [
+    "playwright==1.49.1",
+    "pillow==11.0.0",
+]
+
+# Optional dependencies for Raspberry Pi
+[project.optional-dependencies]
+pi = [
+    "inky",
+]
+test = [
+    "inky",
+    "pytest==7.4.4",
+    "pytest-asyncio==0.23.3",
+]
+
+[project.urls]
+Repository = "https://github.com/coreyk/piinky"
+
+[tool.hatch.build.targets.wheel]
+packages = ["piinky-display"]
+
+[tool.hatch.build]
+include = [
+    "*.py",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
