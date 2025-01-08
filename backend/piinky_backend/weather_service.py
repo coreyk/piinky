@@ -106,7 +106,8 @@ class WeatherService:
             "status": hour['weather'][0]['main'],
             "icon": hour['weather'][0]['id'],
             "humidity": hour['humidity'],
-            "wind_speed": hour['wind_speed']
+            "wind_speed": hour['wind_speed'],
+            "summary": hour['weather'][0]['description']
         } for hour in hourly_data[:hours]]
 
     def _parse_daily_forecast(self, daily_data: List[Dict], days: int = 7) -> List[Dict]:

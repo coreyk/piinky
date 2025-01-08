@@ -6,6 +6,7 @@ export interface WeatherData {
     max: number;
   };
   status: string;
+  detailed_status: string;
   icon: string;
   humidity: number;
   wind_speed: number;
@@ -26,4 +27,5 @@ export interface ForecastData {
   icon: string;
   humidity: number;
   wind_speed: number;
+  summary: string;
 }

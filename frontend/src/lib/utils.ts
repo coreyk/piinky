@@ -14,3 +14,7 @@ export const formatTime = (timeString: string | undefined): string => {
     hour12: true
   }).toLowerCase().replace(/\s?([ap])m$/, '$1');
 };
+
+export const titleCase = (str: string): string => {
+  return str.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+};
