@@ -18,7 +18,19 @@ const CalendarDay: React.FC<CalendarDayProps> = ({ dayData, calendarData, dailyF
   const events = dayData.events || [];
 
   // Filter out recycling events from the regular event list
-  const regularEvents = events.filter(event => event.colorId !== 'recycling');
+  const regularEvents = events
+    .filter(event => event.colorId !== 'recycling')
+    .sort((a, b) => {
+      // Get start times, using date for all-day events
+      const aStart = a.start.dateTime || a.start.date;
+      const bStart = b.start.dateTime || b.start.date;
+
+      // If either event is missing a start time, treat it as equal
+      if (!aStart || !bStart) return 0;
+
+      // Compare the dates
+      return new Date(aStart).getTime() - new Date(bStart).getTime();
+    });
 
   // Check for special recycling events
   const hasCardboard = events.some(event =>
