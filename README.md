@@ -35,10 +35,33 @@ On your Pi, install the required packages and enable SPI:
 ```bash
 # Enable SPI interface
 sudo raspi-config nonint do_spi 0
+sudo raspi-config nonint do_i2c 0
 
 # Install required packages
 sudo apt-get update
 sudo apt-get install -y python3-pip python3-rpi.gpio python3-spidev python3-pil python3-numpy
+```
+
+Edit your `config.txt` file to enable SPI:
+```
+sudo vi /boot/firmware/config.txt
+
+# Add this line near the bottom of the file:
+dtoverlay=spi0-0cs
+```
+
+Now reboot your Pi:
+```bash
+sudo reboot
+```
+Log in again and set up your development environment:
+
+```bash
+cd ~
+mkdir dev
+cd dev
+git clone https://github.com/coreyk/piinky.git
+cd piinky
 ```
 
 ## Software Setup
@@ -55,7 +78,7 @@ sudo apt-get install -y python3-pip python3-rpi.gpio python3-spidev python3-pil 
 7. Click the Service Account just created, go to the **Keys** tab, click **Add Key > Create new key**
 8. Select the JSON Key type and click **Create**
 9. The JSON key file will be downloaded
-10. Move and rename the JSON file to `google_credentials.json` in the piinky root
+10. Move and rename the JSON file to `~/dev/piinky/google_credentials.json`
 
 #### Share your calendar with Piinky
 1. Open [Google Calendar](https://calendar.google.com/calendar/u/0/r/month)
@@ -66,9 +89,9 @@ sudo apt-get install -y python3-pip python3-rpi.gpio python3-spidev python3-pil 
 6. Scroll down to **Integrate Calendar** and find the the Calendar ID (we'll come back to it in the next section)
 
 #### Add the calendar to Piinky
-1. Copy `google_calendar_config.json.example` to `google_calendar_config.json` and edit it
+1. Copy `~/dev/piinky/google_calendar_config.json.example` to `~/dev/piinky/google_calendar_config.json` and edit it
 2. Copy the **Calendar ID** from the previous step and paste it into one of the `calendar_id` values
-3. Optionally, pick a new color from the **colorMap** in `frontend/src/lib/colormap.ts`
+3. Optionally, pick a new color from the **colorMap** in `~/dev/piinky/frontend/src/lib/colormap.ts`
 
 #### Optional: Recycling & Trash calendar
 1. If you have a split municipal recycling pickup schedule for cardboard and cans/plastic like I do, find it and if they have a PDF, download it. Note your trash pickup schedule, too.
@@ -83,7 +106,7 @@ Create an iCal or other importable file for Google Calendar based on this PDF of
 1. Create an [OpenWeatherMap account](https://home.openweathermap.org/users/sign_up)
 2. Go to your [API keys](https://home.openweathermap.org/api_keys) page
 3. Generate a new API key for the 3.0 API
-4. Copy the key to your configuration (location TBD in config)
+4. Copy the key and add it to your configuration file: `~/dev/piinky/owm_config.json`
 
 Note: You'll have to enter billing info but you get 1000 requests per day for free, which is more than enough for Piinky.
 
@@ -111,6 +134,7 @@ npm install
 
 Install Go on the Raspberry Pi:
 ```bash
+cd ~/dev
 # Download Go
 wget https://go.dev/dl/go1.23.4.linux-arm64.tar.gz
 
@@ -129,6 +153,8 @@ go mod tidy
 
 #### Running Backend Tests
 ```bash
+cd ~/dev/piinky
+./piinky.sh --create-env backend-go
 cd backend-go
 go test ./... -v
 ```
@@ -137,13 +163,14 @@ go test ./... -v
 
 Install Playwright and other dependencies:
 ```bash
-cd display
+cd ~/dev/piinky/display
 
 # Install Python dependencies
+python3 -m venv venv
+source venv/bin/activate
 pip install -e .
 
-# Install Playwright and browsers
-pip install playwright
+# Install Playwright browser drivers
 playwright install
 playwright install-deps
 
@@ -156,7 +183,7 @@ sudo apt install fonts-noto-color-emoji
 The tests will only run on a Raspberry Pi with the Inky display, due to the `inky` dependency.
 
 ```bash
-cd display
+cd ~/dev/piinky/display
 pip install -e ".[test]"
 pytest -v
 ```
@@ -165,13 +192,17 @@ pytest -v
 
 If you want to use the Python backend instead of Go:
 ```bash
+cd ~/dev/piinky
+./piinky.sh --create-env backend
 cd backend
 python -m venv venv
 source venv/bin/activate
 pip install -e .
+```
 
 ### Testing
 ```bash
+cd ~/dev/piinky/backend
 pip install -e ".[test]"
 pytest -v
 
@@ -187,6 +218,8 @@ My idea was to try out the experimental [Inky Impression library](https://github
 
 Install Piinky as a system service:
 ```bash
+cd ~/dev/piinky
+
 # Copy service file
 sudo cp service/piinky.service /etc/systemd/system/
 
