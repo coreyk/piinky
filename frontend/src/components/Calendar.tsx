@@ -125,7 +125,7 @@ const Calendar: React.FC<{ headerPosition?: 'top' | 'bottom' }> = ({ headerPosit
   const daysOfWeek = calendarData.startOnSunday ? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   const renderHeader = () => (
-    <div className="col-span-7 bg-white px-2 py-1 flex justify-between items-center">
+    <div className="col-span-7 bg-white px-2 py-1 flex justify-between items-center relative z-10">
       <h2 className="text-md font-bold text-black-800 mb-2">{monthYear}</h2>
       <Weather />
     </div>
