@@ -242,6 +242,7 @@ journalctl -u piinky.service
 ## 3D Printed Case
 
 The case is [available on Printables](https://www.printables.com/model/1139083-piinky-inky-impression-73-raspberry-pi-5).
+Download the [scad-utils](https://github.com/openscad/scad-utils) and drop it in the same folder as the case file.
 
 ![3D Printed Case](images/case_1.png)
 
