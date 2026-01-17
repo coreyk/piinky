@@ -4,19 +4,25 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/coreyk/piinky/backend-go/models"
+	"github.com/coreyk/piinky/backend-go/retry"
 	"golang.org/x/oauth2/google"
 	calendar "google.golang.org/api/calendar/v3"
 	"google.golang.org/api/option"
 )
 
+// Request timeout for calendar operations
+const calendarRequestTimeout = 60 * time.Second
+
 type Service struct {
 	calendarSvc    *calendar.Service
 	calendarConfig models.CalendarConfig
+	retryConfig    retry.Config
 	now            func() time.Time // For testing purposes
 }
 
@@ -62,6 +68,7 @@ func NewService() (*Service, error) {
 	return &Service{
 		calendarSvc:    calendarSvc,
 		calendarConfig: calendarConfig,
+		retryConfig:    retry.DefaultConfig(),
 		now:            time.Now,
 	}, nil
 }
@@ -76,6 +83,9 @@ func (s *Service) HandleGetCalendar(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	ctx, cancel := context.WithTimeout(r.Context(), calendarRequestTimeout)
+	defer cancel()
 
 	// Get current time in local timezone
 	today := s.now().In(time.Local)
@@ -109,13 +119,9 @@ func (s *Service) HandleGetCalendar(w http.ResponseWriter, r *http.Request) {
 
 	var events []*calendar.Event
 	for _, cal := range s.calendarConfig.Calendars {
-		result, err := s.calendarSvc.Events.List(cal.CalendarID).
-			TimeMin(timeMin).
-			TimeMax(timeMax).
-			SingleEvents(true).
-			OrderBy("startTime").
-			Do()
+		result, err := s.fetchCalendarEventsWithRetry(ctx, cal.CalendarID, timeMin, timeMax)
 		if err != nil {
+			log.Printf("Calendar API error for %s: %v", cal.CalendarID, err)
 			http.Error(w, fmt.Sprintf("Failed to fetch calendar events: %v", err), http.StatusInternalServerError)
 			return
 		}
@@ -139,4 +145,16 @@ func (s *Service) HandleGetCalendar(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Service) fetchCalendarEventsWithRetry(ctx context.Context, calendarID, timeMin, timeMax string) (*calendar.Events, error) {
+	return retry.DoWithResult(ctx, s.retryConfig, func() (*calendar.Events, error) {
+		return s.calendarSvc.Events.List(calendarID).
+			Context(ctx).
+			TimeMin(timeMin).
+			TimeMax(timeMax).
+			SingleEvents(true).
+			OrderBy("startTime").
+			Do()
+	})
 }

@@ -1,6 +1,7 @@
 [Unit]
 Description=Piinky Service
-After=network.target
+After=network-online.target
+Wants=network-online.target
 
 [Service]
 Environment="PATH=/home/coreyk/go/bin:/usr/local/go/bin:/usr/local/bin:/usr/bin:/bin"
@@ -8,6 +9,7 @@ User=coreyk
 WorkingDirectory=/home/coreyk/dev/piinky
 ExecStart=/home/coreyk/dev/piinky/piinky.sh
 Restart=always
+RestartSec=30
 
 [Install]
 WantedBy=multi-user.target

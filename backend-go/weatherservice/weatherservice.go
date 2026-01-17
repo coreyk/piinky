@@ -1,12 +1,16 @@
 package weatherservice
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/coreyk/piinky/backend-go/models"
+	"github.com/coreyk/piinky/backend-go/retry"
 )
 
 // HTTPClient interface
@@ -14,9 +18,16 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
+// HTTP client configuration
+const (
+	httpTimeout     = 30 * time.Second
+	requestTimeout  = 45 * time.Second // Overall timeout including retries
+)
+
 type Service struct {
 	weatherConfig models.WeatherConfig
 	httpClient    HTTPClient
+	retryConfig   retry.Config
 }
 
 func NewService() (*Service, error) {
@@ -36,9 +47,15 @@ func NewService() (*Service, error) {
 		return nil, fmt.Errorf("failed to parse weather API key: %v", err)
 	}
 
+	// Create HTTP client with timeout
+	httpClient := &http.Client{
+		Timeout: httpTimeout,
+	}
+
 	return &Service{
 		weatherConfig: weatherConfig,
-		httpClient:    http.DefaultClient,
+		httpClient:    httpClient,
+		retryConfig:   retry.DefaultConfig(),
 	}, nil
 }
 
@@ -53,8 +70,12 @@ func (s *Service) HandleGetWeather(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	owmData, err := s.fetchWeatherData()
+	ctx, cancel := context.WithTimeout(r.Context(), requestTimeout)
+	defer cancel()
+
+	owmData, err := s.fetchWeatherDataWithRetry(ctx)
 	if err != nil {
+		log.Printf("Weather API error: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -68,7 +89,13 @@ func (s *Service) HandleGetWeather(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Service) fetchWeatherData() (*models.OWMWeatherData, error) {
+func (s *Service) fetchWeatherDataWithRetry(ctx context.Context) (*models.OWMWeatherData, error) {
+	return retry.DoWithResult(ctx, s.retryConfig, func() (*models.OWMWeatherData, error) {
+		return s.fetchWeatherData(ctx)
+	})
+}
+
+func (s *Service) fetchWeatherData(ctx context.Context) (*models.OWMWeatherData, error) {
 	url := fmt.Sprintf("https://api.openweathermap.org/data/3.0/onecall?lat=%f&lon=%f&exclude=minutely,alerts&units=%s&appid=%s",
 		s.weatherConfig.Weather.Lat,
 		s.weatherConfig.Weather.Lon,
@@ -76,7 +103,7 @@ func (s *Service) fetchWeatherData() (*models.OWMWeatherData, error) {
 		s.weatherConfig.Weather.APIKey,
 	)
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %v", err)
 	}
@@ -88,7 +115,12 @@ func (s *Service) fetchWeatherData() (*models.OWMWeatherData, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to fetch current weather: status code %d", resp.StatusCode)
+		// Check if this is a transient status code
+		if retry.IsTransientStatusCode(resp.StatusCode) {
+			return nil, fmt.Errorf("weather API returned transient error: status code %d", resp.StatusCode)
+		}
+		// Non-transient errors (like 401 unauthorized) won't be retried
+		return nil, fmt.Errorf("weather API error: status code %d", resp.StatusCode)
 	}
 
 	var owmData models.OWMWeatherData
